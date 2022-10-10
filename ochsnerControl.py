@@ -120,8 +120,8 @@ def get_wp_state():
         # print(r)
         last_start_time=datetime.datetime.strptime(str(r['results'][0]['series'][0]['values'][0][0].split(" ",1)[0]).split(".",1)[0].replace("T"," "),'%Y-%m-%d %H:%M:%S') + datetime.timedelta (hours=2)
         time_since_start=datetime.datetime.strptime(str(datetime.datetime.now()).split(".",1)[0],'%Y-%m-%d %H:%M:%S')-last_start_time
-        #Do not stop WP when running less then 1h (3600 seconds) to prevent stopping and starting to often
-        if time_since_start.seconds < 3600:
+        #Do not stop WP when running less then 1h (7200 seconds) to prevent stopping and starting to often
+        if time_since_start.seconds < 7200 and get_wp_last_temp() >= 57:
             wp_stoppable = False
         else:
             wp_stoppable = True
