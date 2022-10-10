@@ -27,6 +27,10 @@ start_condition_wp=3
 start_condition_pv=2
 start_condition_room=1
 shelly_boiler = ShellyPy.Shelly("192.168.1.39")
+#min seconds
+min_runtime=7200
+#min runtime if it starts close to desired_water_temp and reaches it quick
+min_runtime_with_temp_ok=3600
 
 #Minimal Temperature
 min_water_temp=51
@@ -120,9 +124,14 @@ def get_wp_state():
         # print(r)
         last_start_time=datetime.datetime.strptime(str(r['results'][0]['series'][0]['values'][0][0].split(" ",1)[0]).split(".",1)[0].replace("T"," "),'%Y-%m-%d %H:%M:%S') + datetime.timedelta (hours=2)
         time_since_start=datetime.datetime.strptime(str(datetime.datetime.now()).split(".",1)[0],'%Y-%m-%d %H:%M:%S')-last_start_time
-        #Do not stop WP when running less then 1h (7200 seconds) to prevent stopping and starting to often
-        if time_since_start.seconds < 7200 and get_wp_last_temp() >= 57:
+
+        #Do not stop WP when running less then 1h (default) (min_runtime seconds) to prevent stopping and starting to often
+        act_wp_temp=get_wp_last_temp()
+        if time_since_start.seconds < min_runtime and act_wp_temp >= 57:
             wp_stoppable = False
+        #Stop if running for more then 1h and temp is greate desired_water_temp + 1 degree
+        elif time_since_start.seconds > min_runtime_with_temp_ok and act_wp_temp >= desired_water_temp+1:
+            wp_stoppable = True
         else:
             wp_stoppable = True
     else:
@@ -139,8 +148,8 @@ def stop_heating():
         print("Nothing to do, WP already OFF")
         logging.info("Nothing to do, WP already OFF")
     else:
-        print("Can not stop WP: Is running for less then 1h")
-        logging.info("Can not stop WP: Is running for less then 1h")
+        print("Can not stop WP: Is running for less then 2h")
+        logging.info("Can not stop WP: Is running for less then 2h")
 
 def start_heating():
     days_since_last_legionella=datetime.datetime.strptime(str(datetime.datetime.now()).split(" ",1)[0],'%Y-%m-%d')-datetime.datetime.strptime(str(get_last_legionella_date().split(" ",1)[0]).replace("T"," ").split(" ",1)[0],'%Y-%m-%d')
