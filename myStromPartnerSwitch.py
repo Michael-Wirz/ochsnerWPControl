@@ -25,10 +25,10 @@ async def main():
                 if not switch_floor.relay:
                     await switch_floor.turn_off()
             elif switch_heating.consumption >= 10 and switch_floor.relay == True:
-                print("Heating on, but floorheating on")
+                print("Heating on and floorheating on")
                 print("Everything is fine!")
             elif switch_heating.consumption <= 10 and switch_floor.relay == False:
-                print("Heating off, but floorheating off")
+                print("Heating off and floorheating off")
                 print("Everything is fine!")
 
 
