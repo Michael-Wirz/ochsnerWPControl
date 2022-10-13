@@ -58,7 +58,14 @@ def get_pv_last_peak():
     influx_db = "solaranzeige"
     influx_query = {'q': "select mean(Ueberschuss) from AC where time > '" + str(cre_request_date_minutes(avg_minutes)) + "'"}
     r = requests.get( url = influx_url2 + influx_db, params = influx_query).json()
-    pv_last_peak = r['results'][0]['series'][0]['values'][0][1]
+    pv_last = r['results'][0]['series'][0]['values'][0][1]
+    influx_query = {'q': "select mean(Lade_Entladeleistung) from Batterie where time > '" + str(cre_request_date_minutes(avg_minutes)) + "'"}
+    r = requests.get( url = influx_url2 + influx_db, params = influx_query).json()
+    battery_charge = r['results'][0]['series'][0]['values'][0][1]
+    if battery_charge <= 0:
+      pv_last_peak = pv_last + (-battery_charge)
+    else:
+      pv_last_peak = pv_last
     return pv_last_peak
 
 #get the average room temperature for the last 5 minutes
@@ -169,6 +176,10 @@ def start_heating():
 def decide_what_2_do():
     days_since_last_legionella=datetime.datetime.strptime(str(datetime.datetime.now()).split(" ",1)[0],'%Y-%m-%d')-datetime.datetime.strptime(str(get_last_legionella_date().split(" ",1)[0]).replace("T"," ").split(" ",1)[0],'%Y-%m-%d')
     pv_last_peak_value=get_pv_last_peak()
+    get_wp_state()
+    if get_wp_state()[0] == True:
+      pv_last_peak_value = pv_last_peak_value+600
+
     if  pv_last_peak_value <= 600:
         state_pv = 1
     elif pv_last_peak_value > 600 and pv_last_peak_value < 1000:
