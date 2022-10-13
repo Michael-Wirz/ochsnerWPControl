@@ -1,13 +1,37 @@
-import pymystrom
+"""Example code for communicating with a myStrom plug/switch."""
+import asyncio
 
-plug_mainheating = "192.168.1.52"
-plug_floorheating = "192.168.1.57"
+from pymystrom.switch import MyStromSwitch
 
 
-def decide_what_2_do():
-    print(pymystrom.MyStromPlug(plug_mainheating))
+ip_floorheating = '192.168.1.57'
+ip_mainheating = '192.168.1.52'
 
-if __name__ == '__main__':
-    print(str(datetime.datetime.now()) + ' Checking:')
-   #logging.info(str(datetime.datetime.now()))
-    print("Working state: " +str(decide_what_2_do()))
+
+async def main():
+    async with MyStromSwitch(ip_mainheating) as switch_heating:
+        await switch_heating.get_state()
+        async with MyStromSwitch(ip_floorheating) as switch_floor:
+            await switch_floor.get_state()
+
+            if switch_heating.consumption >= 10 and switch_floor.relay == False:
+                print("Heating on, but floorheating off")
+                print("Will switch floorheating on")
+                if not switch_floor.relay:
+                    await switch_floor.turn_on()
+            elif switch_heating.consumption <= 10 and switch_floor.relay == True:
+                print("Heating off, but floorheating on")
+                print("Will switch floorheating off")
+                if not switch_floor.relay:
+                    await switch_floor.turn_off()
+            elif switch_heating.consumption >= 10 and switch_floor.relay == True:
+                print("Heating on, but floorheating on")
+                print("Everything is fine!")
+            elif switch_heating.consumption <= 10 and switch_floor.relay == False:
+                print("Heating off, but floorheating off")
+                print("Everything is fine!")
+
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
