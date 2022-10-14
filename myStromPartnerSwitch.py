@@ -1,4 +1,4 @@
-"""Example code for communicating with a myStrom plug/switch."""
+#!/usr/bin/python3
 import asyncio
 from pymystrom.switch import MyStromSwitch
 import datetime
