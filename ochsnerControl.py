@@ -136,13 +136,19 @@ def get_wp_state():
         act_wp_temp=get_wp_last_temp()
         if time_since_start.seconds < min_runtime and act_wp_temp >= 57:
             wp_stoppable = False
+            logging.info("Not stoppable bc cause 1")
         #Stop if running for more then 1h and temp is greate desired_water_temp + 1 degree
-        elif time_since_start.seconds > min_runtime_with_temp_ok and act_wp_temp >= desired_water_temp+1:
+        elif act_wp_temp >= desired_water_temp:
             wp_stoppable = True
+            logging.info("Stoppable bc cause 2")
         else:
             wp_stoppable = True
+            logging.info("Stoppable bc cause 3")
+        logging.info("Runtime in seconds: " +time_since_start.seconds)
+        logging.info("wp_stoppable: " +wp_stoppable)
     else:
         wp_stoppable = True
+        logging.info("Stoppable bc cause 4")
     return wp_state,wp_stoppable
 
 def stop_heating():
