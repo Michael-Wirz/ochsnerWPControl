@@ -1,7 +1,12 @@
 """Example code for communicating with a myStrom plug/switch."""
 import asyncio
-
 from pymystrom.switch import MyStromSwitch
+import datetime
+import logging
+
+
+logging.basicConfig(filename="/tmp/heating.log", level=logging.INFO, format="%(asctime)s %(message)s")
+
 
 
 ip_floorheating = '192.168.1.57'
@@ -15,23 +20,32 @@ async def main():
             await switch_floor.get_state()
 
             if switch_heating.consumption >= 10 and switch_floor.relay == False:
-                print("Heating on, but floorheating off")
-                print("Will switch floorheating on")
+                msg="Heating on, but floorheating off"
+                task="Will switch floorheating on"
+                logging.info(msg)
+                logging.info(task)
                 if not switch_floor.relay:
                     await switch_floor.turn_on()
             elif switch_heating.consumption <= 10 and switch_floor.relay == True:
-                print("Heating off, but floorheating on")
-                print("Will switch floorheating off")
-                if not switch_floor.relay:
+                msg="Heating off, but floorheating on"
+                task="Will switch floorheating off"
+                logging.info(msg)
+                logging.info(task)
+                if switch_floor.relay:
                     await switch_floor.turn_off()
             elif switch_heating.consumption >= 10 and switch_floor.relay == True:
-                print("Heating on and floorheating on")
-                print("Everything is fine!")
+                msg="Heating on and floorheating on"
+                task="Everything is fine!"
+                logging.info(msg)
+                logging.info(task)
             elif switch_heating.consumption <= 10 and switch_floor.relay == False:
-                print("Heating off and floorheating off")
-                print("Everything is fine!")
+                msg="Heating off and floorheating off"
+                task="Everything is fine!"
+                logging.info(msg)
+                logging.info(task)
 
 
 if __name__ == "__main__":
+    print(str(datetime.datetime.now()) + ' Checking heating:')
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
