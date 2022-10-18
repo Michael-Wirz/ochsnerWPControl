@@ -134,9 +134,9 @@ def get_wp_state():
 
         #Do not stop WP when running less then 1h (default) (min_runtime seconds) to prevent stopping and starting to often
         act_wp_temp=get_wp_last_temp()
-        if time_since_start.seconds < min_runtime and act_wp_temp >= 57:
+        if time_since_start.seconds < min_runtime and act_wp_temp < 57:
             wp_stoppable = False
-            logging.info("Not stoppable bc cause 1")
+            logging.info("Not stoppable bc cause 1, act_wp_temp = " +str(act_wp_temp))
         #Stop if running for more then 1h and temp is greate desired_water_temp + 1 degree
         elif act_wp_temp >= desired_water_temp:
             wp_stoppable = True
@@ -144,8 +144,8 @@ def get_wp_state():
         else:
             wp_stoppable = True
             logging.info("Stoppable bc cause 3")
-        logging.info("Runtime in seconds: " +time_since_start.seconds)
-        logging.info("wp_stoppable: " +wp_stoppable)
+        logging.info("Runtime in seconds: " +str(time_since_start.seconds))
+        logging.info("wp_stoppable: " +str(wp_stoppable))
     else:
         wp_stoppable = True
         logging.info("Stoppable bc cause 4")
