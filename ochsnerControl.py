@@ -256,7 +256,12 @@ def decide_what_2_do():
     logging.info("state_room: " + str(state_room) + " Room Temp: " + str(room_last_peak_value))
 
     if state_wp <= start_condition_wp or days_since_last_legionella.days > 9:
-        if get_last_start_date().days == 0 and wp_last_temp_value >= desired_water_temp - 2:
+        if days_since_last_legionella.days > 9:
+            condition = "Legionella Temp necessary heating to: " +str(legionella_water_temp)
+            msg = condition
+            logging.info(msg)
+            start_heating()
+        elif get_last_start_date().days == 0 and wp_last_temp_value >= desired_water_temp - 2:
             condition = "Heating has already been activated today and temperatur is above desired_water_temp-2 => Will not start"
             msg = condition
             logging.info(msg)
