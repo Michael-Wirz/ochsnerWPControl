@@ -34,9 +34,9 @@ min_runtime = 7200
 min_runtime_with_temp_ok = 3600
 
 # Minimal Temperature
-min_water_temp = 51
+min_water_temp = 41
 # Water temp if last legionella run is < 9 dayys
-desired_water_temp = 57
+desired_water_temp = 47
 # Water temp fo legionella run
 legionella_water_temp = 63
 night_tarif_start = '21:00:00'
@@ -126,7 +126,7 @@ def get_last_start_date():
     avg_minutes = 900
     influx_db = "test1"
     influx_query = {
-        'q': "select temp from boiler where temp > 57 and time > '" + str(cre_request_date_minutes(avg_minutes)) + "'"}
+        'q': "select temp from boiler where temp > desired_water_temp and time > '" + str(cre_request_date_minutes(avg_minutes)) + "'"}
     r = requests.get(url=influx_url1 + influx_db, params=influx_query).json()
     print(r)
     if len(str(r)) <= 40:
@@ -166,7 +166,7 @@ def get_wp_state():
 
         # Do not stop WP when running less than 1h (default) (min_runtime seconds) to prevent stopping and starting to often
         act_wp_temp = get_wp_last_temp()
-        if time_since_start.seconds < min_runtime and act_wp_temp < 57:
+        if time_since_start.seconds < min_runtime and act_wp_temp < desired_water_temp:
             wp_stoppable = False
             logging.info("Not stoppable bc cause 1, act_wp_temp = " + str(act_wp_temp))
         # Stop if running for more than 1h and temp is greate desired_water_temp + 1 degree
@@ -239,15 +239,15 @@ def decide_what_2_do():
     elif room_last_peak_value > 23:
         state_room = 3
     wp_last_temp_value = get_wp_last_temp()
-    if wp_last_temp_value <= 53:
+    if wp_last_temp_value <= 43:
         state_wp = 1
-    elif 53.1 < wp_last_temp_value <= 55.1:
+    elif 43.1 < wp_last_temp_value <= 45.1:
         state_wp = 2
-    elif 55.2 < wp_last_temp_value <= 57.1:
+    elif 45.2 < wp_last_temp_value <= 47.1:
         state_wp = 3
-    elif 57.1 < wp_last_temp_value <= 60.1:
+    elif 47.1 < wp_last_temp_value <= 50.1:
         state_wp = 4
-    elif wp_last_temp_value > 60.1:
+    elif wp_last_temp_value > 50.1:
         state_wp = 5
     logging.info("Days since last legionella: " + str(days_since_last_legionella.days))
     print("Days since last legionella: " + str(days_since_last_legionella.days))
