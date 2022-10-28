@@ -38,7 +38,7 @@ min_water_temp = 41
 # Water temp if last legionella run is < 9 dayys
 desired_water_temp = 47
 # Water temp fo legionella run
-legionella_water_temp = 63
+legionella_water_temp = 62
 night_tarif_start = '21:00:00'
 night_tarif_end = '07:00:00'
 
@@ -113,7 +113,7 @@ def get_wp_last_temp():
 # When no result, date is set to 01.01.1999' to force a legionella run
 def get_last_legionella_date():
     influx_db = "test1"
-    influx_query = {'q': "select max(temp) from boiler where temp > 60"}
+    influx_query = {'q': "select last(temp) from boiler where temp >= 60"}
     r = requests.get(url=influx_url1 + influx_db, params=influx_query).json()
     if len(str(r)) <= 40:
         date_last_legionella = "1999-01-01 01:01:01T0000"
@@ -199,9 +199,7 @@ def stop_heating():
 
 
 def start_heating():
-    days_since_last_legionella = datetime.datetime.strptime(str(datetime.datetime.now()).split(" ", 1)[0],
-                                                            '%Y-%m-%d') - datetime.datetime.strptime(
-        str(get_last_legionella_date().split(" ", 1)[0]).replace("T", " ").split(" ", 1)[0], '%Y-%m-%d')
+    days_since_last_legionella = datetime.datetime.strptime(str(datetime.datetime.now()).split(" ", 1)[0],'%Y-%m-%d') - datetime.datetime.strptime(str(get_last_legionella_date().split(" ", 1)[0]).replace("T", " ").split(" ", 1)[0], '%Y-%m-%d')
     if days_since_last_legionella.days > 9:
         print("Start Legionella")
         print("Actual Temp: " + str(get_wp_last_temp()))
@@ -218,9 +216,8 @@ def start_heating():
 
 
 def decide_what_2_do():
-    days_since_last_legionella = datetime.datetime.strptime(str(datetime.datetime.now()).split(" ", 1)[0],
-                                                            '%Y-%m-%d') - datetime.datetime.strptime(
-        str(get_last_legionella_date().split(" ", 1)[0]).replace("T", " ").split(" ", 1)[0], '%Y-%m-%d')
+    days_since_last_legionella = datetime.datetime.strptime(str(datetime.datetime.now()).split(" ", 1)[0],'%Y-%m-%d') \
+                                 - datetime.datetime.strptime(str(get_last_legionella_date().split(" ", 1)[0]).replace("T", " ").split(" ", 1)[0], '%Y-%m-%d')
     pv_last_peak_value = get_pv_last_peak()
     get_wp_state()
     if get_wp_state()[0] is True:
