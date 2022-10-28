@@ -203,6 +203,7 @@ def start_heating():
                                                             '%Y-%m-%d') - datetime.datetime.strptime(
         str(get_last_legionella_date().split(" ", 1)[0]).replace("T", " ").split(" ", 1)[0], '%Y-%m-%d')
     if days_since_last_legionella.days > 9:
+        print("Start Legionella")
         print("Actual Temp: " + str(get_wp_last_temp()))
         print("Temp Goal: " + str(legionella_water_temp))
         logging.info("Actual Temp: " + str(get_wp_last_temp()))
