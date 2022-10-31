@@ -232,9 +232,9 @@ def decide_what_2_do():
     room_last_peak_value = get_room_last_temp()
     if room_last_peak_value <= 19:
         state_room = 1
-    elif 19 < room_last_peak_value < 23:
+    elif 19 < room_last_peak_value <= 24:
         state_room = 2
-    elif room_last_peak_value > 23:
+    elif room_last_peak_value >= 24.1:
         state_room = 3
     wp_last_temp_value = get_wp_last_temp()
     if wp_last_temp_value <= 43:
@@ -264,7 +264,7 @@ def decide_what_2_do():
             msg = condition
             logging.info(msg)
             stop_heating()
-        elif state_pv >= start_condition_pv and state_room >= start_condition_room and wp_last_temp_value < desired_water_temp:
+        elif state_pv >= start_condition_pv and state_room >= start_condition_room and wp_last_temp_value < desired_water_temp - 4:
             condition = "Heating"
             msg = "WP target: Heating"
             logging.info(msg)
