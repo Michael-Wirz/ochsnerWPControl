@@ -181,11 +181,11 @@ def get_wp_state():
         r = requests.get(url=influx_url1 + influx_db, params=influx_query).json()
         # adding two hours at the end because of influx and sysdate time difference
         # print(r)
-        last_start_time = datetime.datetime.strptime(
-            str(r['results'][0]['series'][0]['values'][0][0].split(" ", 1)[0]).split(".", 1)[0].replace("T", " "),
-            '%Y-%m-%d %H:%M:%S') + datetime.timedelta(hours=2)
-        time_since_start = datetime.datetime.strptime(str(datetime.datetime.now()).split(".", 1)[0],
-                                                      '%Y-%m-%d %H:%M:%S') - last_start_time
+        last_start_time = datetime.datetime.strptime(str(r['results'][0]['series'][0]['values'][0][0].split(" ", 1)[0]).split(".", 1)[0].replace("T", " "),'%Y-%m-%d %H:%M:%S') + datetime.timedelta(hours=1)
+ #       logging.info("Last Start:" +str(last_start_time))
+        time_since_start = datetime.datetime.strptime(str(datetime.datetime.now()).split(".", 1)[0], '%Y-%m-%d %H:%M:%S') - last_start_time
+ #       logging.info("Time Since Start:" + str(time_since_start))
+  #      logging.info("Time2 Since Start:" + str(datetime.datetime.strptime(str(datetime.datetime.now()).split(".", 1)[0], '%Y-%m-%d %H:%M:%S')))
 
         # Do not stop WP when running less than 1h (default) (min_runtime seconds) to prevent stopping and starting to often
         act_wp_temp = get_wp_last_temp()
@@ -199,7 +199,7 @@ def get_wp_state():
         else:
             wp_stoppable = True
             logging.info("Stoppable bc cause 3")
-        logging.info("Runtime in seconds: " + str(ttime_since_start.secondsime_since_start.seconds))
+        logging.info("Runtime in seconds: " + str(time_since_start.seconds))
         logging.info("wp_stoppable: " + str(wp_stoppable))
     else:
         wp_stoppable = True
