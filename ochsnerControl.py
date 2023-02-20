@@ -22,21 +22,21 @@ logging.basicConfig(filename="/tmp/wp.log", level=logging.INFO, format="%(asctim
 # desired_water_temp = config['WATER_CONFIG']['desired_water_temp']
 # legionella_water_temp = config['WATER_CONFIG']['legionella_water_temp']
 influx_url1 = "http://192.168.1.43:8086/query?db="
-influx_url2 = "http://192.168.1.153:8086/query?db="
+influx_url2 = "http://192.168.0.110:8086/query?db="
 
 start_condition_wp = 3
 start_condition_pv = 2
 start_condition_room = 1
 shelly_boiler = ShellyPy.Shelly("192.168.1.39")
 # min seconds
-min_runtime = 7200
+min_runtime = 10000
 # min runtime if it starts close to desired_water_temp and reaches it quick
-min_runtime_with_temp_ok = 3600
+min_runtime_with_temp_ok = 7200
 
 # Minimal Temperature
-min_water_temp = 41
+min_water_temp = 55 
 # Water temp if last legionella run is < 9 dayys
-desired_water_temp = 47
+desired_water_temp = 57
 # Water temp fo legionella run
 legionella_water_temp = 62
 night_tarif_start = '21:00:00'
@@ -47,6 +47,29 @@ def cre_request_date_minutes(avg_minutes):
     request_date = datetime.datetime.now() - datetime.timedelta(hours=2, minutes=avg_minutes)
     return request_date
 
+def cre_request_date_minutes2(avg_minutes):
+    request_date = datetime.datetime.now() - datetime.timedelta(hours=1, minutes=avg_minutes)
+    return request_date
+
+
+# function#
+# def cre_request_date_days(avg_days):
+#    request_date = datetime.datetime.now() - datetime.timedelta(days=avg_days)
+#    return request_date
+
+# get average peak pv power for the last 20 minutes
+# taking the average over a bigger time (20m), better resulte when weather is changing quickly
+def get_pv_last_peak():
+    avg_minutes = 20
+    influx_db = "solaranzeige"
+    influx_query = {
+        'q': "select mean(Ueberschuss) from AC where time > '" + str(cre_request_date_minutes(avg_minutes)) + "'"}
+    r = requests.get(url=influx_url2 + influx_db, params=influx_query).json()
+    pv_last = r['results'][0]['series'][0]['values'][0][1]
+    influx_query = {'q': "select mean(Lade_Entladeleistung) from Batterie where time > '" + str(
+        cre_request_date_minutes(avg_minutes)) + "'"}
+    r = requests.get(url=influx_url2 + influx_db, params=influx_query).json()
+    battery_charge = r['results'][0]['series'][0]['values'][0][1]
 
 # function#
 # def cre_request_date_days(avg_days):
@@ -102,7 +125,7 @@ def get_wp_last_temp():
     avg_minutes = 2
     influx_db = "test1"
     influx_query = {
-        'q': "select mean(temp) from boiler where time > '" + str(cre_request_date_minutes(avg_minutes)) + "'"}
+        'q': "select mean(temp) from boiler where time > '" + str(cre_request_date_minutes2(avg_minutes)) + "'"}
     r = requests.get(url=influx_url1 + influx_db, params=influx_query).json()
     wp_last_temp = r['results'][0]['series'][0]['values'][0][1]
     return wp_last_temp
@@ -176,7 +199,7 @@ def get_wp_state():
         else:
             wp_stoppable = True
             logging.info("Stoppable bc cause 3")
-        logging.info("Runtime in seconds: " + str(time_since_start.seconds))
+        logging.info("Runtime in seconds: " + str(ttime_since_start.secondsime_since_start.seconds))
         logging.info("wp_stoppable: " + str(wp_stoppable))
     else:
         wp_stoppable = True
@@ -200,7 +223,7 @@ def stop_heating():
 
 def start_heating():
     days_since_last_legionella = datetime.datetime.strptime(str(datetime.datetime.now()).split(" ", 1)[0],'%Y-%m-%d') - datetime.datetime.strptime(str(get_last_legionella_date().split(" ", 1)[0]).replace("T", " ").split(" ", 1)[0], '%Y-%m-%d')
-    if days_since_last_legionella.days > 9:
+    if days_since_last_legionella.days >= 7:
         print("Start Legionella")
         print("Actual Temp: " + str(get_wp_last_temp()))
         print("Temp Goal: " + str(legionella_water_temp))
@@ -237,13 +260,13 @@ def decide_what_2_do():
     elif room_last_peak_value >= 24.1:
         state_room = 3
     wp_last_temp_value = get_wp_last_temp()
-    if wp_last_temp_value <= 43:
+    if wp_last_temp_value <= desired_water_temp - 4:
         state_wp = 1
-    elif 43.1 < wp_last_temp_value <= 45.1:
+    elif desired_water_temp - 3.9 < wp_last_temp_value <= desired_water_temp - 1.1 :
         state_wp = 2
-    elif 45.2 < wp_last_temp_value <= 47.1:
+    elif desired_water_temp - 1.8 < wp_last_temp_value <= desired_water_temp + 0.1:
         state_wp = 3
-    elif 47.1 < wp_last_temp_value <= 50.1:
+    elif desired_water_temp + 0.1 < wp_last_temp_value <= desired_water_temp + 3.3:
         state_wp = 4
     elif wp_last_temp_value > 50.1:
         state_wp = 5
@@ -253,8 +276,8 @@ def decide_what_2_do():
     logging.info("state_pv: " + str(state_pv) + " PV Power: " + str(pv_last_peak_value))
     logging.info("state_room: " + str(state_room) + " Room Temp: " + str(room_last_peak_value))
 
-    if state_wp <= start_condition_wp or days_since_last_legionella.days > 9:
-        if days_since_last_legionella.days > 9:
+    if state_wp <= start_condition_wp or days_since_last_legionella.days >= 7:
+        if days_since_last_legionella.days > 8:
             condition = "Legionella Temp necessary heating to: " +str(legionella_water_temp)
             msg = condition
             logging.info(msg)
@@ -264,11 +287,20 @@ def decide_what_2_do():
             msg = condition
             logging.info(msg)
             stop_heating()
-        elif state_pv >= start_condition_pv and state_room >= start_condition_room and wp_last_temp_value < desired_water_temp - 4:
+        elif state_wp <= 1:
+            condition = "Heating bc state_wp to low"
+            msg = condition 
+            logging.info(msg)
+            start_heating()
+        elif state_pv >= start_condition_pv and pv_last_peak_value >= 2000  and wp_last_temp_value < desired_water_temp -2:
+            condition = "Heating bc of lots of pv power"
+            msg = condition 
+            logging.info(msg)
+            start_heating()
+        elif state_pv >= start_condition_pv and state_room >= start_condition_room and wp_last_temp_value < desired_water_temp - 3:
             condition = "Heating"
             msg = "WP target: Heating"
             logging.info(msg)
-            start_heating()
         elif state_pv <= start_condition_pv and state_room >= start_condition_room:
             condition = "Waiting for PV"
             msg = "Waiting for PV to produce enough power, current value: " + str(pv_last_peak_value)
@@ -282,10 +314,12 @@ def decide_what_2_do():
         elif state_room >= 3 and get_battery_soc() >= 80:
             condition = "Using warm room, letting WP work for 1 hour even when PV is not high enough"
             msg = condition
+            logging.info(msg)
             start_heating()
         elif state_wp == 1 and get_battery_soc() >= 80:
             condition = "Start WP because WP temp to low: PV not high enough but battery SOC > 80%"
             msg = condition
+            logging.info(msg)
             start_heating()
     #    elif  state_wp = 1 and get_battery_soc() <= 80 and datetime.datetime.now())
     elif state_wp != start_condition_wp:
@@ -297,7 +331,9 @@ def decide_what_2_do():
         condition = "Nothing to do"
         msg = condition
         logging.info(msg)
-    print(msg)
+        print(msg)
+    msg = "else" 
+    condition = msg
     return (
         state_wp, pv_last_peak_value, state_room, room_last_peak_value, state_wp, wp_last_temp_value, condition, msg)
 
