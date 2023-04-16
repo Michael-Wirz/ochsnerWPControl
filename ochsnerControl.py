@@ -51,7 +51,6 @@ def cre_request_date_minutes2(avg_minutes):
     request_date = datetime.datetime.now() - datetime.timedelta(hours=1, minutes=avg_minutes)
     return request_date
 
-
 # function#
 # def cre_request_date_days(avg_days):
 #    request_date = datetime.datetime.now() - datetime.timedelta(days=avg_days)
@@ -102,8 +101,7 @@ def get_room_last_temp():
     avg_minutes = 5
     influx_db = "test1"
     boiler_device = "192.168.1.56"
-    influx_query = {'q': "select mean(temp) from mystrom2 where device='" + boiler_device + "' and time > '" + str(
-        cre_request_date_minutes(avg_minutes)) + "'"}
+    influx_query = {'q': "select mean(temp) from mystrom2 where device='" + boiler_device + "' and time > '" + str(cre_request_date_minutes(avg_minutes)) + "'"}
     r = requests.get(url=influx_url1 + influx_db, params=influx_query).json()
     room_last_temp = r['results'][0]['series'][0]['values'][0][1]
     return room_last_temp
@@ -124,12 +122,15 @@ def get_battery_soc():
 def get_wp_last_temp():
     avg_minutes = 2
     influx_db = "test1"
-    influx_query = {
-        'q': "select mean(temp) from boiler where time > '" + str(cre_request_date_minutes2(avg_minutes)) + "'"}
+    influx_query = {'q': "select mean(temp) from boiler where time > '" + str(cre_request_date_minutes(avg_minutes)) + "'"}
+    print(str(influx_query))
     r = requests.get(url=influx_url1 + influx_db, params=influx_query).json()
-    wp_last_temp = r['results'][0]['series'][0]['values'][0][1]
+    if str(r) == "{'results': [{'statement_id': 0}]}":
+        wp_last_temp=46
+    else:
+        wp_last_temp = r['results'][0]['series'][0]['values'][0][1]
+    print("WP_LAST_TEMP: " +str(wp_last_temp))
     return wp_last_temp
-
 
 # Check for the last time the temperature was more than 60°
 # Only the last 10 days are checked
@@ -334,8 +335,7 @@ def decide_what_2_do():
         print(msg)
     msg = "else" 
     condition = msg
-    return (
-        state_wp, pv_last_peak_value, state_room, room_last_peak_value, state_wp, wp_last_temp_value, condition, msg)
+    return (state_wp, pv_last_peak_value, state_room, room_last_peak_value, state_wp, wp_last_temp_value, condition, msg)
 
 
 if __name__ == '__main__':
